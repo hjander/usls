@@ -308,7 +308,7 @@ impl Annotator {
 
     /// Save annotated images to `runs` folder
     pub fn save(&self, image: &RgbaImage, saveout: &str) {
-        let mut saveout = std::path::PathBuf::from("runs").join(saveout);
+        let mut saveout = std::path::PathBuf::from(saveout);
         if !saveout.exists() {
             std::fs::create_dir_all(&saveout).unwrap();
         }
