@@ -378,11 +378,6 @@ impl Annotator {
             }
         }
 
-        // save
-        if let Some(saveout) = &self.saveout {
-            self.save(&img_rgba, saveout);
-        }
-
         DynamicImage::ImageRgba8(img_rgba)
     }
 
