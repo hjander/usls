@@ -226,13 +226,11 @@ impl Annotator {
         self
     }
 
-    /// Plotting polygons' areas or not
     pub fn without_polygons(mut self, x: bool) -> Self {
         self.without_polygons = x;
         self
     }
 
-    /// Plotting polygons' contours or not
     pub fn without_contours(mut self, x: bool) -> Self {
         self.without_contours = x;
         self
@@ -250,12 +248,6 @@ impl Annotator {
 
     pub fn with_polygons_text_bg(mut self, x: bool) -> Self {
         self.with_polygons_text_bg = x;
-        self
-    }
-
-    /// Plotting masks or not
-    pub fn without_masks(mut self, x: bool) -> Self {
-        self.without_masks = x;
         self
     }
 
@@ -316,7 +308,7 @@ impl Annotator {
 
     /// Save annotated images to `runs` folder
     pub fn save(&self, image: &RgbaImage, saveout: &str) {
-        let mut saveout = std::path::PathBuf::from("runs").join(saveout);
+        let mut saveout = std::path::PathBuf::from(saveout);
         if !saveout.exists() {
             std::fs::create_dir_all(&saveout).unwrap();
         }
@@ -331,53 +323,62 @@ impl Annotator {
     /// Annotate images
     pub fn annotate(&self, imgs: &[DynamicImage], ys: &[Y]) {
         for (img, y) in imgs.iter().zip(ys.iter()) {
-            let mut img_rgba = img.to_rgba8();
-
-            // polygons
-            if !self.without_polygons {
-                if let Some(xs) = &y.polygons() {
-                    self.plot_polygons(&mut img_rgba, xs);
-                }
-            }
-
-            // bboxes
-            if !self.without_bboxes {
-                if let Some(xs) = &y.bboxes() {
-                    self.plot_bboxes(&mut img_rgba, xs);
-                }
-            }
-
-            // mbrs
-            if !self.without_mbrs {
-                if let Some(xs) = &y.mbrs() {
-                    self.plot_mbrs(&mut img_rgba, xs);
-                }
-            }
-
-            // keypoints
-            if !self.without_keypoints {
-                if let Some(xs) = &y.keypoints() {
-                    self.plot_keypoints(&mut img_rgba, xs);
-                }
-            }
-
-            // masks
-            if !self.without_masks {
-                if let Some(xs) = &y.masks() {
-                    self.plot_masks(&mut img_rgba, xs);
-                }
-            }
-
-            // probs
-            if let Some(xs) = &y.probs() {
-                self.plot_probs(&mut img_rgba, xs);
-            }
+            let annotated_img = self.annotate_image(img, y);
 
             // save
             if let Some(saveout) = &self.saveout {
-                self.save(&img_rgba, saveout);
+                self.save(&annotated_img.to_rgba8(), saveout);
             }
         }
+    }
+
+
+    /// Annotate image and return DynamicImage for direct use
+    pub fn annotate_image(&self, img: &DynamicImage, y: &Y) -> DynamicImage {
+
+        let mut img_rgba = img.to_rgba8();
+
+        // polygons
+        if !self.without_polygons {
+            if let Some(xs) = &y.polygons() {
+                self.plot_polygons(&mut img_rgba, xs)
+            }
+        }
+
+        // bboxes
+        if !self.without_bboxes {
+            if let Some(xs) = &y.bboxes() {
+                self.plot_bboxes(&mut img_rgba, xs)
+            }
+        }
+
+        // mbrs
+        if !self.without_mbrs {
+            if let Some(xs) = &y.mbrs() {
+                self.plot_mbrs(&mut img_rgba, xs)
+            }
+        }
+
+        // keypoints
+        if !self.without_keypoints {
+            if let Some(xs) = &y.keypoints() {
+                self.plot_keypoints(&mut img_rgba, xs)
+            }
+        }
+
+        // probs
+        if let Some(xs) = &y.probs() {
+            self.plot_probs(&mut img_rgba, xs)
+        }
+
+        // masks
+        if !self.without_masks {
+            if let Some(xs) = &y.masks() {
+                self.plot_masks(&mut img_rgba, xs)
+            }
+        }
+
+        DynamicImage::ImageRgba8(img_rgba)
     }
 
     /// Plot bounding bboxes and labels
@@ -626,7 +627,7 @@ impl Annotator {
                 });
                 image::DynamicImage::from(luma)
             } else {
-                image::DynamicImage::from(mask.mask().to_owned())
+                mask.mask().to_owned()
             };
             let luma = luma.resize_exact(
                 w / scale,
